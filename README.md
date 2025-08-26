@@ -5,7 +5,7 @@ First git repo, please excuse for any mistakes.
 
 ## Usage:
 
-Dependencies:
+### Dependencies:
 
 jq, yt-dlp, ffmpeg. 
 
