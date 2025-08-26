@@ -25,11 +25,13 @@ Exeute run.bat to initiate the program.
 
 To **compile**, use the command:
 
-python -m PyInstaller --onefile ^
+``` python
+  python -m PyInstaller --onefile ^
   --add-binary "yt-dlp.exe;." ^
   --add-binary "ffmpeg.exe;." ^
   --add-binary "jq.exe;." ^
   yt_dlp_frontend.py
+```
 
 to compile. The result will be a standalone executable in \dist.
 
