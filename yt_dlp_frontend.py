@@ -130,6 +130,8 @@ def build_common_args(outtmpl: str) -> list:
         "--ffmpeg-location", FFMPEG_PATH,
         "--no-overwrites",
         "--restrict-filenames",
+        "--write-thumbnail",
+        "--embed-thumbnail",
         "--progress",
         "--console-title",
         "--output", outtmpl,
@@ -301,6 +303,22 @@ def read_urls_from_file(path: str):
             urls.append(s)
     return urls
 
+def remove_associated_thumbnails(downloaded_files: list):
+    """
+    Remove thumbnails that match the downloaded files' basenames.
+    e.g. track.mp3 -> track.webp, track.jpg, etc.
+    """
+    thumb_exts = (".jpg", ".jpeg", ".png", ".webp")
+    for f in downloaded_files:
+        base, _ = os.path.splitext(f)
+        for ext in thumb_exts:
+            thumb = base + ext
+            if os.path.exists(thumb):
+                try:
+                    os.remove(thumb)
+                    print(f"Removed: {thumb}")
+                except Exception as e:
+                    print(f"Could not remove {thumb}: {e}")
 
 def main():
     ensure_paths()
@@ -417,6 +435,8 @@ def main():
 
     # Dispatch
     failures = 0
+    downloaded_files = []
+
     for u in urls:
         url = u.strip()
         if not url:
@@ -424,9 +444,25 @@ def main():
         print("------------------------------------------------------")
         print(f"Downloading: {url}")
         print("------------------------------------------------------")
+
+        # Get exact output filename
+        getname_cmd = [YTDLP_BIN, "--get-filename"] + (common + mode_args) + [url]
+        try:
+            proc = subprocess.run(getname_cmd, capture_output=True, text=True, check=True)
+            filename = proc.stdout.strip()
+        except subprocess.CalledProcessError:
+            filename = None
+
+        # Run the actual download
         rc = run_YTDLP_BIN(YTDLP_BIN, url, common + mode_args, ERROR_LOG)
-        if rc != 0:
+        if rc == 0 and filename:
+            downloaded_files.append(filename)
+        else:
             failures += 1
+
+        # Clean up thumbnails for successfully downloaded files
+        remove_associated_thumbnails(downloaded_files)
+
 
     print("\n================================")
     if failures:
